@@ -1,0 +1,194 @@
+{
+  "nome_sistema": "Baze - Monitoramento Ambiental",
+  "versao": "3.0.0",
+  "descricao": "Sistema de monitoramento da qualidade do ar e mobilidade com dados ",
+
+  "apis": {
+    "madrid_poi": {
+      "nome_original": "madrid_poi",
+      "url": "https://api.iotbi.tech/api/v1/madrid/PointOfInterest?appKey=estagio",
+      "nome_amigavel": "Pontos de Interesse - Madrid",
+      "cor": "#e74c3c",
+      "cor_cluster": "#e74c3c",
+      "ativa": true,
+      "ordem": 1,
+      "remover_chaves": [],
+      "colunas": ["_entityId", "name", "location_coordinates_lat", "location_coordinates_lon", "streetAddress", "areaServed"],
+      "mapeamento_campos": {
+        "name": "Nome do Local",
+        "streetAddress": "Endereço",
+        "areaServed": "Área"
+      },
+      "unidades": {},
+      "descricao": "Pontos de interesse turístico e urbano em Madrid"
+    },
+    
+    "porto_poi": {
+      "nome_original": "porto_poi",
+      "url": "https://api.iotbi.tech/api/v1/porto/PointOfInterest?appKey=estagio",
+      "nome_amigavel": "Pontos de Interesse - Porto",
+      "cor": "#3498db",
+      "cor_cluster": "#3498db",
+      "ativa": true,
+      "ordem": 2,
+      "remover_chaves": [],
+      "colunas": ["_entityId", "name", "location_coordinates_lat", "location_coordinates_lon", "streetAddress", "areaServed"],
+      "mapeamento_campos": {
+        "name": "Nome do Local",
+        "streetAddress": "Endereço",
+        "areaServed": "Área"
+      },
+      "unidades": {},
+      "descricao": "Pontos de interesse turístico e urbano no Porto"
+    },
+    
+    "portodigital_poi": {
+      "nome_original": "portodigital_poi",
+      "url": "https://api.iotbi.tech/api/v1/portodigital/PointOfInterest?appKey=estagio",
+      "nome_amigavel": "Pontos de Interesse - Porto Digital",
+      "cor": "#27ae60",
+      "cor_cluster": "#27ae60",
+      "ativa": true,
+      "ordem": 3,
+      "remover_chaves": [],
+      "colunas": ["_entityId", "name", "location_coordinates_lat", "location_coordinates_lon", "streetAddress", "areaServed"],
+      "mapeamento_campos": {
+        "name": "Nome do Local",
+        "streetAddress": "Endereço",
+        "areaServed": "Área"
+      },
+      "unidades": {},
+      "descricao": "Pontos de interesse na região do Porto Digital"
+    },
+    
+    "airquality_observed": {
+      "nome_original": "airquality_observed",
+      "url": "https://api.iotbi.tech/api/v1/stellio_owm_ld/AirQualityObserved?appKey=estagio",
+      "nome_amigavel": "Qualidade do Ar",
+      "cor": "#9b59b6",
+      "cor_cluster": "#9b59b6",
+      "ativa": true,
+      "ordem": 4,
+      "remover_chaves": [],
+      "colunas": ["_entityId", "location_coordinates_lat", "location_coordinates_lon", "streetAddress", "areaServed", "dateObserved", "temperature", "relativeHumidity", "airQualityLevel", "airQualityIndex", "co", "no", "no2", "so2", "windSpeed", "precipitation"],
+      "mapeamento_campos": {
+        "streetAddress": "Local",
+        "areaServed": "Concelho",
+        "dateObserved": "Data/Hora",
+        "temperature": "Temperatura",
+        "relativeHumidity": "Humidade",
+        "airQualityLevel": "Nível Qualidade do Ar",
+        "airQualityIndex": "Índice Qualidade do Ar",
+        "co": "Monóxido de Carbono (CO)",
+        "no": "Óxido Nítrico (NO)",
+        "no2": "Dióxido de Nitrogênio (NO2)",
+        "so2": "Dióxido de Enxofre (SO2)",
+        "windSpeed": "Velocidade do Vento",
+        "precipitation": "Precipitação"
+      },
+      "unidades": {
+        "Temperatura": "°C",
+        "Humidade": "%",
+        "Monóxido de Carbono (CO)": "µg/m³",
+        "Óxido Nítrico (NO)": "µg/m³",
+        "Dióxido de Nitrogênio (NO2)": "µg/m³",
+        "Dióxido de Enxofre (SO2)": "µg/m³",
+        "Velocidade do Vento": "m/s",
+        "Precipitação": "mm"
+      },
+      "descricao": "Dados de qualidade do ar em tempo real"
+    },
+    
+    "portodigital_vehicle": {
+      "nome_original": "portodigital_vehicle",
+      "url": "https://api.iotbi.tech/api/v1/portodigital/Vehicle?appKey=estagio",
+      "nome_amigavel": "Mobilidade - Veículos",
+      "cor": "#f39c12",
+      "cor_cluster": "#f39c12",
+      "ativa": true,
+      "ordem": 5,
+      "remover_chaves": [],
+      "colunas": ["_entityId", "location_coordinates_lat", "location_coordinates_lon", "dateObserved", "vehicleType", "speed", "fuelLevel", "mileage"],
+      "mapeamento_campos": {
+        "dateObserved": "Data/Hora",
+        "vehicleType": "Tipo de Veículo",
+        "speed": "Velocidade",
+        "fuelLevel": "Nível Combustível",
+        "mileage": "Quilometragem"
+      },
+      "unidades": {
+        "Velocidade": "km/h",
+        "Nível Combustível": "%",
+        "Quilometragem": "km"
+      },
+      "descricao": "Dados de mobilidade e veículos"
+    }
+  },
+
+  "mapa": {
+    "centro": {
+      "lat": 41.15,
+      "lon": -8.61
+    },
+    "zoom": 11,
+    "zoom_maximo": 19,
+    "clustering": {
+      "ativo": true,
+      "raio_maximo": 50,
+      "tamanho_icone": 30,
+      "mostrar_cobertura_no_hover": false,
+      "agrupar_ao_clicar": true,
+      "spiderfy_no_zoom_maximo": true
+    },
+    "camada_base": {
+      "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "atribuicao": "© OpenStreetMap contributors"
+    }
+  },
+
+  "caminhos": {
+    "excel": "C:\\pipeline baze\\Dados_Baze.xlsx",
+    "logs": "C:\\pipeline baze\\logs\\",
+    "config": "C:\\pipeline baze\\config.json",
+    "backup": "C:\\pipeline baze\\backup\\"
+  },
+
+  "excel": {
+    "sheet_names": {
+      "madrid_poi": "Madrid POI",
+      "porto_poi": "Porto POI",
+      "portodigital_poi": "Porto Digital POI",
+      "airquality_observed": "Qualidade do Ar",
+      "portodigital_vehicle": "Veículos"
+    },
+    "ajustar_larguras": true,
+    "formatar_datas": true
+  },
+
+  "logs": {
+    "nivel": "INFO",
+    "arquivo_log": "pipeline.log",
+    "max_tamanho_mb": 10,
+    "max_arquivos": 5
+  },
+
+  "interface": {
+    "titulo_principal": "🌍 Baze - Rede de Monitoramento",
+    "subtitulo": "Dados de qualidade do ar, clima e mobilidade em tempo real",
+    "mostrar_descricao_redes": true,
+    "mostrar_nota_clusters": true,
+    "nota_clusters": "📌 Locais com múltiplas leituras aparecem agrupados. Clique no grupo para ver todos os pontos."
+  },
+
+  "painel": {
+    "cards_dinamicos": true,
+    "mostrar_todas_apis": true
+  },
+
+  "debug": {
+    "modo_debug": false,
+    "mostrar_logs_console": true,
+    "salvar_respostas_api": false,
+    "pasta_respostas": "C:\\pipeline baze\\respostas_api\\"
+  }
+}

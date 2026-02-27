@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baze - Rede de Monitoramento</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 id="titulo-principal">🌍 Baze - Rede de Monitoramento</h1>
+            <p class="subtitle" id="subtitulo">Dados de qualidade do ar, clima e mobilidade em tempo real</p>
+        </header>
+
+        <div class="intro-section">
+            <h2>Sobre o Monitoramento</h2>
+            <p>O sistema Baze recolhe dados de sensores em todo o país:</p>
+            <div class="network-description" id="network-description-container"></div>
+            <p class="note" id="clusters-note">📌 Locais com múltiplas leituras aparecem agrupados. Clique no grupo para ver todos os pontos.</p>
+        </div>
+
+        <div class="mini-map-section">
+            <h2>🗺️ Mapa de Monitoramento</h2>
+            <div class="map-container">
+                <div id="mini-map"></div>
+                <button class="fullscreen-btn" onclick="window.location.href='/mapa'">⛶ Abrir Mapa em Ecrã Completo</button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <h2>📊 Painel de Monitoramento</h2>
+            <div class="stats-grid" id="stats-grid-container"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script>
+        let miniMap;
+        let allData = {apis: {}};
+        let clusters = {};
+
+        function initMap() {
+            miniMap = L.map('mini-map', {
+                center: [41.15, -8.61],
+                zoom: 11,
+                zoomControl: false,
+                dragging: true,
+                scrollWheelZoom: false
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(miniMap);
+
+            carregarDados();
+        }
+
+        async function carregarDados() {
+            try {
+                const response = await fetch('/api/dados');
+                allData = await response.json();
+                console.log('Dados carregados:', allData);
+                
+                atualizarInterfaceComConfig(allData.config);
+                criarClusters();
+                adicionarTodosMarcadores(allData.apis);
+                criarCardsEstatisticas(allData.stats, allData.config);
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            }
+        }
+
+        function atualizarInterfaceComConfig(config) {
+            if (!config) return;
+            
+            if (config.interface) {
+                if (config.interface.titulo_principal) {
+                    document.getElementById('titulo-principal').textContent = config.interface.titulo_principal;
+                }
+                if (config.interface.subtitulo) {
+                    document.getElementById('subtitulo').textContent = config.interface.subtitulo;
+                }
+                if (config.interface.nota_clusters) {
+                    document.getElementById('clusters-note').textContent = config.interface.nota_clusters;
+                }
+            }
+            
+            if (config.apis) {
+                const container = document.getElementById('network-description-container');
+                container.innerHTML = '';
+                
+                const apisOrdenadas = Object.entries(config.apis)
+                    .sort((a, b) => (a[1].ordem || 999) - (b[1].ordem || 999));
+                
+                apisOrdenadas.forEach(([apiKey, apiConfig]) => {
+                    if (!apiConfig.ativa) return;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'network-item';
+                    div.innerHTML = `
+                        <span class="dot" style="background: ${apiConfig.cor}; box-shadow: 0 0 0 2px ${apiConfig.cor}33;"></span>
+                        <strong>${apiConfig.nome_amigavel}:</strong> ${apiConfig.descricao || ''}
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function criarClusters() {
+            const config = allData.config || {};
+            
+            Object.entries(config.apis || {}).forEach(([apiKey, apiConfig]) => {
+                if (!apiConfig.ativa) return;
+                
+                clusters[apiKey] = L.markerClusterGroup({
+                    showCoverageOnHover: false,
+                    zoomToBoundsOnClick: true,
+                    spiderfyOnMaxZoom: true,
+                    maxClusterRadius: 50,
+                    iconCreateFunction: function(cluster) {
+                        return L.divIcon({
+                            html: `<div style="background-color: ${apiConfig.cor}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">${cluster.getChildCount()}</div>`,
+                            className: 'custom-cluster-icon',
+                            iconSize: L.point(30, 30)
+                        });
+                    }
+                });
+                
+                miniMap.addLayer(clusters[apiKey]);
+            });
+        }
+
+        function adicionarTodosMarcadores(apis) {
+            Object.entries(clusters).forEach(([apiKey, cluster]) => {
+                cluster.clearLayers();
+            });
+
+            Object.entries(apis).forEach(([apiKey, pontos]) => {
+                if (!clusters[apiKey]) return;
+                
+                const markers = [];
+                pontos.forEach(ponto => {
+                    const marker = L.circleMarker([ponto.lat, ponto.lon], {
+                        radius: 8,
+                        fillColor: ponto.cor,
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+
+                    const popupContent = criarPopupContent(ponto, apiKey);
+                    marker.bindPopup(popupContent);
+                    markers.push(marker);
+                });
+
+                clusters[apiKey].addLayers(markers);
+            });
+        }
+
+        function criarPopupContent(ponto, apiKey) {
+            const config = allData.config?.apis?.[apiKey] || {};
+            const tipoAmigavel = config.nome_amigavel || apiKey;
+            const cor = config.cor || '#3498db';
+            
+            let html = `<div class="popup-content">`;
+            html += `<h3>${ponto.local || 'Local não identificado'}</h3>`;
+            html += `<p class="popup-type" style="color: ${cor}; font-weight: bold; border-left: 4px solid ${cor}; padding-left: 8px; margin: 10px 0; background-color: #f8f9fa; padding: 8px 12px; border-radius: 6px;">`;
+            html += `<strong>Tipo:</strong> ${tipoAmigavel}`;
+            html += `</p>`;
+            
+            html += `<div class="popup-dados-essenciais" style="background-color: #f0f7ff; padding: 10px; border-radius: 6px; margin-bottom: 12px;">`;
+            html += `<p style="margin: 4px 0;"><strong>📅 Data/Hora:</strong> ${ponto.data_hora || 'N/A'}</p>`;
+            html += `<p style="margin: 4px 0;"><strong>📍 Longitude:</strong> ${ponto.lon?.toFixed(6) || 'N/A'}</p>`;
+            html += `<p style="margin: 4px 0;"><strong>📍 Latitude:</strong> ${ponto.lat?.toFixed(6) || 'N/A'}</p>`;
+            html += `</div>`;
+            
+            if (ponto.dados && Object.keys(ponto.dados).length > 0) {
+                html += `<div class="popup-dados-ambientais">`;
+                html += `<p style="margin: 4px 0 8px 0; font-weight: bold; color: #555;">📊 Dados:</p>`;
+                
+                for (const [chave, valor] of Object.entries(ponto.dados)) {
+                    html += `<p style="margin: 4px 0;"><strong>${chave}:</strong> ${valor}</p>`;
+                }
+                
+                html += `</div>`;
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+
+        function criarCardsEstatisticas(stats, config) {
+            const container = document.getElementById('stats-grid-container');
+            container.innerHTML = '';
+            
+            const apisOrdenadas = Object.entries(config.apis || {})
+                .sort((a, b) => (a[1].ordem || 999) - (b[1].ordem || 999));
+            
+            let totalPontos = 0;
+            
+            apisOrdenadas.forEach(([apiKey, apiConfig]) => {
+                if (!apiConfig.ativa) return;
+                
+                const total = stats[apiKey] || 0;
+                totalPontos += total;
+                
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                card.innerHTML = `
+                    <div class="stat-icon" style="color: ${apiConfig.cor};">●</div>
+                    <div class="stat-content">
+                        <span class="stat-label">${apiConfig.nome_amigavel}</span>
+                        <span class="stat-value">${total}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            const totalCard = document.createElement('div');
+            totalCard.className = 'stat-card';
+            totalCard.innerHTML = `
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <span class="stat-label">Total</span>
+                    <span class="stat-value">${totalPontos}</span>
+                </div>
+            `;
+            container.appendChild(totalCard);
+            
+            const ultimaCard = document.createElement('div');
+            ultimaCard.className = 'stat-card';
+            ultimaCard.innerHTML = `
+                <div class="stat-icon">🕒</div>
+                <div class="stat-content">
+                    <span class="stat-label">Última Atualização</span>
+                    <span class="stat-value">${stats.ultima_atualizacao || ''}</span>
+                </div>
+            `;
+            container.appendChild(ultimaCard);
+        }
+
+        window.addEventListener('load', initMap);
+    </script>
+</body>
+</html>
